@@ -21,7 +21,7 @@ for fileFG in os.listdir(PATHFG):
     imgBG.paste(imgFG, (locFG[fileFG][0],locFG[fileFG][1]), imgFG)
 
     # save
-    imgBG = imgBG.convert('LA')
+    imgBG = imgBG.convert('L')
     imgBG.save(PATHCOMBINED + str(count) + ".png")
 
     print "count:", count, "combine:", fileFG, "with:", fileBG
