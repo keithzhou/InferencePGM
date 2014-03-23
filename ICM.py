@@ -49,7 +49,7 @@ class ICM:
       # b
       maxB = -np.infty
       for b in range(self.num_class):
-        g = self.gaussian(self.data[t],self.param_mu[f], self.param_sigma[f])
+        g = self.gaussian(self.data[t],self.param_mu[b], self.param_sigma[b])
         current = self.param_pi[b] * np.sum(np.log(np.where(self.h_m[t] ==  0, g, 1.0)))
         if current > maxB:
           maxB = current
@@ -58,7 +58,7 @@ class ICM:
   def step_M(self): 
     # pi
     for j in range(self.num_class):
-      self.param_pi[j] = 1.0/(2 * len(self.h_f)) * (self.h_f == j).sum() + (self.h_b == j).sum()
+      self.param_pi[j] = 1.0/(2 * len(self.h_f)) * ((self.h_f == j).sum() + (self.h_b == j).sum())
 
     # alpha
     for j in range(self.num_class):
@@ -68,13 +68,13 @@ class ICM:
 
     # mu
     for j in range(self.num_class):
-      scale = np.where((self.h_f == j) | (self.h_b == j), 1.0, 0.0).sum()
+      scale = ((self.h_f == j) | (self.h_b == j)).sum()
       scale = scale if scale != 0 else 1.0
       self.param_mu[j] = np.sum( np.where((self.h_f == j) | (self.h_b == j), 1.0, 0.0)[:,None] * self.data, axis=0) / scale
 
     # sigma
     for j in range(self.num_class):
-      scale = np.where((self.h_f == j) | (self.h_b == j), 1.0, 0.0).sum()
+      scale = ((self.h_f == j) | (self.h_b == j)).sum()
       scale = scale if scale != 0 else 1.0
       self.param_sigma[j] = np.sum( np.where((self.h_f == j) | (self.h_b == j), 1.0, 0.0)[:,None] * pow(self.data - self.param_mu[j],2), axis=0) / scale
     
@@ -86,7 +86,7 @@ class ICM:
 
 if __name__ == "__main__":
   sut = ICM()
-  sut.do_EM(1)
+  sut.do_EM(5)
 
   print "launch visualizer"
   v = visualizer.visualizer()
