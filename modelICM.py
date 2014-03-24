@@ -66,7 +66,3 @@ class modelICM(model.model):
 if __name__ == "__main__":
   sut = modelICM()
   sut.do_EM(10)
-
-  print "launch visualizer"
-  v = visualizer.visualizer()
-  v.visualize(sut.param_alpha, sut.param_mu, sut.param_sigma)

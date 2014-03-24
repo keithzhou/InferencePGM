@@ -7,7 +7,7 @@ class visualizer:
 
   def array2image(self,datain):
     data = datain.reshape(self.shape)
-    rescaled = (255.0 / data.max() * (data - data.min())).astype(np.uint8)
+    rescaled = (255.0 * data).astype(np.uint8)
     return Image.fromarray(rescaled)
 
   def visualize(self, alpha, mu, sigma):
