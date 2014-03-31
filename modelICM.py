@@ -2,6 +2,7 @@ import numpy as np
 import loadData
 import visualizer
 import model
+import matplotlib.mlab as mlab
 
 class modelICM(model.model):
   def __init__(self,  num_class = 14):
@@ -20,21 +21,25 @@ class modelICM(model.model):
       # f
       maxF = - np.infty
       for f in range(self.num_class):
-        g = self.gaussian(self.data[t],self.param_mu[f], self.param_sigma[f])
-        current = self.param_pi[f] * np.sum(np.log(np.where(self.h_m[t] == 0 , 1 - self.param_alpha[f], self.param_alpha[f]*g))) # use log to avoid underflow
+        g = mlab.normpdf(self.data[t],self.param_mu[f], self.param_sigma[f])
+        g[g < 1e-6] = 1e-6
+        toLog = np.where(self.h_m[t] == 0 , 1 - self.param_alpha[f], self.param_alpha[f]*g)
+        toLog[toLog < 1e-6] = 1e-6
+        current = self.param_pi[f] * np.sum(np.log(toLog)) # use log to avoid underflow
         if current > maxF:
           maxF = current
           self.h_f[t] = f
 
       # m
-      pm1 = self.param_alpha[self.h_f[t]] * self.gaussian(self.data[t], self.param_mu[self.h_f[t]], self.param_sigma[self.h_f[t]])
-      pm0 = (1 - self.param_alpha[self.h_f[t]]) * self.gaussian(self.data[t], self.param_mu[self.h_b[t]], self.param_sigma[self.h_b[t]])
+      pm1 = self.param_alpha[self.h_f[t]] * mlab.normpdf(self.data[t], self.param_mu[self.h_f[t]], self.param_sigma[self.h_f[t]])
+      pm0 = (1 - self.param_alpha[self.h_f[t]]) * mlab.normpdf(self.data[t], self.param_mu[self.h_b[t]], self.param_sigma[self.h_b[t]])
       self.h_m[t] = np.where(pm1 > pm0, 1, 0)
 
       # b
       maxB = -np.infty
       for b in range(self.num_class):
-        g = self.gaussian(self.data[t],self.param_mu[b], self.param_sigma[b])
+        g = mlab.normpdf(self.data[t],self.param_mu[b], self.param_sigma[b])
+        g[g < 1e-6] = 1e-6
         current = self.param_pi[b] * np.sum(np.log(np.where(self.h_m[t] ==  0, g, 1.0)))
         if current > maxB:
           maxB = current
@@ -61,8 +66,13 @@ class modelICM(model.model):
     for j in range(self.num_class):
       scale = ((self.h_f == j) | (self.h_b == j)).sum()
       scale = scale if scale != 0 else 1.0
-      self.param_sigma[j] = np.sum( np.where((self.h_f == j) | (self.h_b == j), 1.0, 0.0)[:,None] * pow(self.data - self.param_mu[j],2), axis=0) / scale
+      self.param_sigma[j] = np.sqrt(np.sum( np.where((self.h_f == j) | (self.h_b == j), 1.0, 0.0)[:,None] * pow(self.data - self.param_mu[j],2), axis=0) / scale)
+
+    self.param_pi[self.param_pi < 1e-6] = 1e-6
+    self.param_alpha[self.param_alpha < 1e-6] = 1e-6
+    self.param_mu[self.param_mu < 1e-6] = 1e-6
+    self.param_sigma[self.param_sigma < 1e-6] = 1e-6
     
 if __name__ == "__main__":
   sut = modelICM()
-  sut.do_EM(10)
+  sut.train()

@@ -4,7 +4,8 @@ import visualizer
 
 class model:
   def __init__(self,  num_class = 14, limit = None):
-    self.num_class = num_class;
+    self.num_class = num_class
+    self.iteration = 0
 
     # data
     self.data = loadData.loadData(limit = limit).getDataArray()
@@ -23,21 +24,24 @@ class model:
     # visualizer
     self.visualizer = visualizer.visualizer()
 
-  def gaussian(self, x, mu, sig):
-      return 1.0/(pow(2*np.pi, .5) * sig) * np.exp(-(x-mu)*(x-mu) / (2 * sig * sig ))
-
   def step_E(self):
       raise NotImplemented
 
   def step_M(self): 
       raise NotImplemented
     
-  def do_EM(self, n_iteration = 10):
-    self.visualizer.visualize(self.param_alpha, self.param_mu, self.param_sigma)
-    for i in range(n_iteration):
-      print "iteration:", i 
-      self.step_E()
-      print "done step_E. ",
-      self.step_M()
-      print "done step_M. "
+  def train(self):
+    while 1:
+      try:
+        print "iteration:", self.iteration
+        self.step_E()
+        print "done step_E."
+        self.step_M()
+        print "done step_M."
+        self.iteration += 1
+      except KeyboardInterrupt:
+        self.visualize()
+        break
+      
+  def visualize(self):
       self.visualizer.visualize(self.param_alpha, self.param_mu, self.param_sigma)
