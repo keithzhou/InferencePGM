@@ -3,7 +3,7 @@ import numpy as np
 
 class visualizer:
   def __init__(self):
-    self.shape = (225,300) # height * width
+    self.shape = (61,81) # height * width
 
   def array2image(self,datain):
     data = datain.reshape(self.shape)
@@ -16,4 +16,8 @@ class visualizer:
         im.paste(self.array2image(alpha[i]),(self.shape[1]*0, self.shape[0]*i))
         im.paste(self.array2image(mu[i]),(self.shape[1]*1, self.shape[0]*i))
         im.paste(self.array2image(sigma[i]),(self.shape[1]*2, self.shape[0]*i))
+    im.show()
+
+  def visualizeMatrix(self, m):
+    im = Image.fromarray((255.0 * m).astype(np.uint8))
     im.show()
