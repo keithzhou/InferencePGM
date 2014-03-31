@@ -13,11 +13,17 @@ class loadData:
     if limit:
       self.files = self.files[:limit]
 
-    self.dataImage = [Image.open(PATHCOMBINED + i) for i in self.files]
-    self.dataArray = [1.0*np.array(img.getdata())/255.0 for img in self.dataImage]
+    self.dataArray = []
+    for i in self.files:
+      image = Image.open(PATHCOMBINED+i) 
+      self.dataArray.append(1.0*np.array(image.getdata(), dtype=np.float64)/255.0)
+    
+    self.dataArray = np.array(self.dataArray)
+#    self.dataImage = [Image.open(PATHCOMBINED + i) for i in self.files]
+#    self.dataArray = [1.0*np.array(img.getdata(), dtype=np.float64)/255.0 for img in self.dataImage]
 
-  def getDataImage(self):
-    return self.dataImage
+  #def getDataImage(self):
+    #return self.dataImage
 
   def getDataArray(self):
     return self.dataArray
