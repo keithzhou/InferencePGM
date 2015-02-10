@@ -173,6 +173,7 @@
 
 % *** MATH PACKAGES ***
 %
+\usepackage{fixltx2e}
 %\usepackage[cmex10]{amsmath}
 % A popular package from the American Mathematical Society that provides
 % many useful and powerful commands for dealing with mathematics. If using
@@ -386,9 +387,9 @@
 % was not built to handle multiple paragraphs
 %
 
-\author{xxx,Student Number:xxxxxxx,\\
-        xxx,Student Number:xxxxxxx,\\
-        xxx,Student Number:xxxxxx,
+\author{xxx,Student Number:xxxxxxx, e-mail:\\
+        xxx,Student Number:xxxxxxx, e-mail:\\
+        Wenzhangzhi Guo, Student Number: 997573353, e-mail: wenzhi.guo@mail.utoronto.ca
 }
 % note the % following the last \IEEEmembership and also \thanks - 
 % these prevent an unwanted space from occurring between the last author name
@@ -470,7 +471,7 @@
 
 
 \section{Introduction}
-For the course project, we propose to compare different Probablistic Graphical Model \emph{learning algorithms} in terms of their speed, performance and memory. Specifically, we plan to follow the approach described in \cite{BF:1}.
+For the course project, we propose to compare different Probabilistic Graphical Model \emph{learning algorithms} in terms of their speed, performance and memory. Specifically, we plan to follow the approach described in \cite{BF:1}.
 
 We plan to implement and compare the following learning algorithms on the same graphical model using the same dataset:
 \begin{itemize}
@@ -482,6 +483,13 @@ We plan to implement and compare the following learning algorithms on the same g
 \item Sum Product EM
 \end{itemize}
 
+The target application for this project is foreground/background segmentation, where the foreground and background images come from a pre-defined library. In this case, the graphical model is built around four sets of variables:
+\begin{itemize}
+\item f: class index for the foreground
+\item m: a binary mask (m\textsubscript{i} = 1 indicates that pixel z\textsubscript{i} is a foreground pixel)
+\item b: class index for the background
+\item z: the observed pixel intensities
+\end{itemize}
 \section{Dataset}
 Parallel to the problem described in \cite{BF:1}, we have generated a similar dataset where each image consists of randomly picking a background image and a foreground image and paste them together.
 
@@ -509,7 +517,12 @@ Parallel to the problem described in \cite{BF:1}, we have generated a similar da
 \end{figure}
 
 Fig~\ref{fig:background} shows the background images used, fig~\ref{fig:foreground} shows the foreground images used, and fig~\ref{fig:combined} shows some of the generated images. Only the generated combined images are presented to our model and are used for model learning.
-
+\section{Additional Resources}
+In addition to \cite{BF:1}, the following papers also provide some details on the different learning algorithms:
+\begin{itemize}
+\item Dempster, A.P.; Laird, N.M.; and  Rubin D.B., “Maximum Likelihood from Incomplete Data via the EM Algorithm,” Proc. Royal Statistical Soc., vol. 39, pp. 1-38, 1977.
+\item Kschischang, F.R.; Frey B.J.; and  Loeliger H.-A., “Factor Graphs and the Sum-Product Algorithm,” IEEE Trans. Information Theory, special issue on codes on graphs and iterative algorithms, vol. 47, no. 2, pp. 498-519, Feb. 2001.
+\end{itemize}
 % needed in second column of first page if using \IEEEpubid
 %\IEEEpubidadjcol
 
@@ -665,8 +678,7 @@ Fig~\ref{fig:background} shows the background images used, fig~\ref{fig:foregrou
 \begin{thebibliography}{1}
 
 \bibitem{BF:1}
-Frey, B.J.; Jojic, Nebojsa, "A comparison of algorithms for inference and learning in probabilistic graphical models," Pattern Analysis and Machine Intelligence, IEEE Transactions on , vol.27, no.9, pp.1392,1416, Sept. 2005
-
+Frey, B.J.; Jojic, Nebojsa, "A comparison of algorithms for inference and learning in probabilistic graphical models," Pattern Analysis and Machine Intelligence, IEEE Transactions on , vol.27, no.9, pp.1392,1416, Sept. 2005.
 \end{thebibliography}
 
 % biography section
