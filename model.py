@@ -17,12 +17,15 @@ class model:
       # 2. alpha representing probability of being foreground
       # 3. mu and sigma representing gaussian of observation vs fg/bg data
     self.param_pi = np.array([1.0/self.num_class] * self.num_class)
-    self.param_alpha = np.ones((self.num_class, len(self.data[0])))  * 0.5
+    self.param_alpha = np.zeros((self.num_class, len(self.data[0]))) + 0.5
     self.param_mu = np.random.random((self.num_class, len(self.data[0]))) 
-    self.param_sigma = np.ones((self.num_class, len(self.data[0]))) * 1.0
+    self.param_sigma = np.ones((self.num_class, len(self.data[0]))) * 10
 
     # visualizer
     self.visualizer = visualizer.visualizer()
+
+  def log_gaussian(self,data,mu,sigma):
+    return -1.0 * (data - mu) ** 2 / (2 * sigma**2) - np.log(np.sqrt(2*np.pi)*sigma)
 
   def step_E(self):
       raise NotImplemented
