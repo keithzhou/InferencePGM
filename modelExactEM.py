@@ -71,14 +71,12 @@ class modelExactEM(model.model):
 
     # alpha
     self.param_alpha = np.sum( self.q_tfm1, axis=0) / np.sum(self.q_f, axis = 0)[:,np.newaxis]
-    self.param_alpha[self.param_alpha < 1e-10] = 1e-10
-    self.param_alpha[self.param_alpha > 1-1e-10] = 1-1e-10
 
     # mu
     self.param_mu = np.sum((self.q_tfm1 + self.q_tbm0) * self.data[:,np.newaxis,:], axis=0) / np.sum(self.q_tfm1 + self.q_tbm0, axis=0)
 
     # sigma
-    self.param_sigma = np.sqrt(np.sum((self.q_tfm1 + self.q_tbm0)* pow(self.data[:,np.newaxis,:] - self.param_mu, 2), axis=0) / np.sum((self.q_tfm1 + self.q_tbm0), axis=0))
+    self.param_sigma = np.sqrt(np.sum((self.q_tfm1 + 1 - self.q_tbm0)* pow(self.data[:,np.newaxis,:] - self.param_mu, 2), axis=0) / np.sum((self.q_tfm1 + 1-self.q_tbm0), axis=0))
     self.param_sigma[self.param_sigma < 1e-6] = 1e-6
 
     vf = np.sum(self.q_f,axis=0) / len(self.q_f)
