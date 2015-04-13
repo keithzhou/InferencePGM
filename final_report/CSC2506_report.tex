@@ -1,0 +1,290 @@
+\documentclass{article} % For LaTeX2e
+\usepackage{nips15submit_e,times}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{fixltx2e}
+\usepackage[cmex10]{amsmath}
+%\documentstyle[nips14submit_09,times,art10]{article} % For LaTeX 2.09
+
+
+\title{Foreground/Background Segmentation with Probabilistic Graphical Models}
+
+
+\author{
+Weijian Zhou \\
+997107018 \\
+Department of Electrical and Computer Engineering\\
+Univeristy of Toronto\\
+Toronto, ON, M5S 3G4, Canada \\
+\texttt{keith.zhou@mail.utoronto.ca} \\
+\And
+ChenXing Zhao \\
+995965139 \\
+Department of Electrical and Computer Engineering\\
+Univeristy of Toronto\\
+Toronto, ON, M5S 3G4, Canada \\
+\texttt{chenxing.zhao@mail.utoronto.ca} \\
+\AND
+Wenzhangzhi Guo \\
+997573353 \\
+Department of Electrical and Computer Engineering\\
+Univeristy of Toronto\\
+Toronto, ON, M5S 3G4, Canada \\
+\texttt{wenzhi.guo@mail.utoronto.ca} \\
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\nipsfinalcopy % Uncomment for camera-ready version
+
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+The abstract paragraph should be indented 1/2~inch (3~picas) on both left and
+right-hand margins. Use 10~point type, with a vertical spacing of 11~points.
+The word \textbf{Abstract} must be centered, bold, and in point size 12. Two
+line spaces precede the abstract. The abstract must be limited to one
+paragraph.
+\end{abstract}
+
+\section{Introduction}
+\label{intro}
+In recent years, there is increasing interest in solving machine learning problems with probabilistic graphical models. Probabilistic graphical models not only provide a simple way to visualize the interactions between different variables in a model, they also allow complex probabilistic computations to be expressed as graphical manipulations [1]. In a graphical model, two of the main issues we are trying to solve are inference (compute the expectation of some nodes given some observed nodes) and learning (setting the parameters of the model given some data). In this paper, we are going to follow the approaches in [2] to compare four different inference and learning algorithms: Iterated Conditional Modes (ICM), Exact Expectation-Maximization (EM), Gibbs Sampling EM, and Variational (mean-field) EM. In order to compare the above four algorithms quantitatively, those four algorithms were tested against a simple image segmentation problem where we are trying to describe pictures as a composition of foreground and background objects, selected from a pre-defined library. Segmenting an image into foreground and background can be helpful to solve many other computer vision problems such as object classification [2].
+
+All four inference and learning algorithms mentioned above have been widely used in many different image segmentation problems. ICM is initially introduced by Besag in 1983 [3] and since then, the original algorithm and its variants have been applied to many different image segmentation problems [4] [5] [6]. In general, ICM iterates between finding the optimal value of each hidden variable \textit{h}\textsubscript{\textit{i}} (given visible variables and all the other hidden variables constant) and finding the optimal values for the model parameters [2]. On the other hand, the three EM algorithms accounts for uncertainty in the random variables in the update rules [2]. Those three algorithms use a \textit{Q}-distribution to approximate the joint distribution of the visible and hidden variables. For the exact EM, there is no restrictions on the \textit{Q}-distributions, for the Gibbs Sampling EM, we use sampling to update the hidden variables in the E-step, and mean-field EM assumes the \textit{Q}-distribution can be fully factorized. EM algorithms are also widely used for image segmentation problems [7] [8] [9] [10].
+
+\section{Algorithms}
+\label{alog}
+\subsection{Data generation}
+\label{data_gen}
+In this paper, we are trying to segment each image into foreground pixels and background pixels. A training image or testing image used in this paper is generated using the following procedure:
+\begin{itemize}
+
+\item Randomly select a foreground image. Each foreground image has a fixed mask which specifies the location of the foreground image within the background image.
+
+\item Randomly select a background image.
+
+\item Combine the foreground image and background image with the cut-out mask.
+
+\item Add some Gaussian noise to the resultant image. The Gaussian noise is added to model sensor noise and change in illumination so that we can have more data available in the training/testing stage. This is image that is shown to our model in the training and testing stage.
+\end{itemize}
+
+A graphical illustration of the above procedures can be seen in Fig~\ref{fig:data_generation}.
+
+\begin{figure}[h]
+\begin{center}
+\includegraphics[width=0.5\textwidth]{data_generation}
+\end{center}
+\caption{Overview of data generation}
+\label{fig:data_generation}
+\end{figure}
+
+\subsection{Model}
+\label{model}
+In this project, we are using an occlusion model to describe each image generated in \ref{data_gen}, where the foreground object and background object in each image come from the same library with \textit{J} objects. If we assume each image has \textit{K} pixels, then we can denote the pixel intensity in an image by \textit{z}\textsubscript{\textit{1}}, \ldots , \textit{z}\textsubscript{\textit{K}}. The probability of choosing \textit{f}\textsuperscript{\textit{th}} foreground object is \textit{P(f)}. Then depending on the foreground object, a binary mask is constructed \textit{m} = (\textit{m}\textsubscript{\textit{1}}, \ldots, \textit{m}\textsubscript{\textit{K}}). \textit{m}\textsubscript{\textit{i}} is either 0 (pixel \textit{z}\textsubscript{\textit{i}} is a background pixel) or 1 (pixel \textit{z}\textsubscript{\textit{i}} is a foreground pixel). The binary must cut out the foreground object, but given the foreground object, the mask RVs are independent. Similarly, the probability of choosing \textit{b}\textsuperscript{\textit{th}} background object is \textit{P(b)}. Lastly, when given the mask, the foreground object class and background object class, the intensities of the pixels in an image are independent. Therefore, the joint distribution of the model can be written as:
+\begin{equation}
+P(z,m,f,b) = P(b)P(f)\Bigg( \prod_{i=1}^KP(m_{i}|f)\Bigg)\Bigg( \prod_{i=1}^KP(z_{i}|m_{i},f,b)\Bigg)
+\label{eq:eq1}
+\end{equation}
+
+Since the mask RVs (\textit{m}\textsubscript{\textit{i}}) are binary, the last term in equation~\ref{eq:eq1} can be factorized. When \textit{m}\textsubscript{\textit{i}} = 0, the pixel intensity (\textit{z}\textsubscript{\textit{i}}) only depends on the background object index \textit{b}, whereas when \textit{m}\textsubscript{\textit{i}} = 1, \textit{z}\textsubscript{\textit{i}} only depends on the foreground object index \textit{f}. Therefore, equation~\ref{eq:eq1} can be re-written as:
+\begin{equation}
+P(z,m,f,b) = P(b)P(f)\Bigg( \prod_{i=1}^KP(m_{i}|f)\Bigg)\Bigg( \prod_{i=1}^KP(z_{i}|f)^{m_{i}}\Bigg)\Bigg( \prod_{i=1}^KP(z_{i}|b)^{1-m_{i}}\Bigg)
+\label{eq:eq2}
+\end{equation}
+
+To reduce the computation complexity, it is often useful to parametrize the model. In this case, we assume the pixel intensities in each image follows a Gaussian distribution, where given a foreground or background object index \textit{k}, the pixel intensity \textit{z}\textsubscript{\textit{i}} equals to \textit{$\mu$}\textsubscript{\textit{ki}} plus zero-mean Gaussian noise with a variance of \textit{$\varphi$}\textsubscript{\textit{ki}}. This added noise would account for the noise we added to each of the images. We also denote the probability of class \textit{k} by \textit{$\pi$}\textsubscript{\textit{k}}. Lastly, we denote the probability of \textit{m}\textsubscript{\textit{i}} = 1, given the foreground class is \textit{f} be \textit{$\alpha$}\textsubscript{\textit{fi}}. Using this parametrization, equation~\ref{eq:eq2} can be written as:
+\begin{equation}
+P(z,m,f,b) = \pi_{b} \pi_{f} \Bigg( \prod_{i=1}^K {(\alpha_{fi})}^{m_{i}} {(1-\alpha_{fi})}^{1-m_{i}} \mathcal{N}(z_i;\mu_{fi},\varphi_{fi})^{m_{i}}\mathcal{N}(z_i;\mu_{bi},\varphi_{bi})^{1-m_{i}} \Bigg)
+\label{eq:eq3}
+\end{equation}
+
+where $\mathcal{N}$ represent the Gaussian distribution. Due to the properties of Gaussian distribution, equation~\ref{eq:eq3} can be simplified as:
+\begin{equation}
+P(z,m,f,b) = \pi_{b} \pi_{f} \Bigg( \prod_{i=1}^K {(\alpha_{fi})}^{m_{i}} {(1-\alpha_{fi})}^{1-m_{i}} \mathcal{N}\Big( z_i;{m_{i}}\mu_{fi} + (1-m_{i})\mu_{bi}, {m_{i}}\varphi_{fi} + (1-m_{i})\varphi_{bi}\Big)\Bigg)
+\label{eq:eq4}
+\end{equation}
+
+\subsection{Finding model parameters by minimizing the free energy }
+\label{free_energy}
+The model parameters are found based on each training image. In each training image, we can group the variables into hidden RVs, visible RVs and parameters. The visible RVs in this case are the pixel intensities: \textit{v}\textsuperscript{\textit{(t)}} = \textit{z}\textsuperscript{\textit{(t)}}. The hidden RVs are \textit{h}\textsuperscript{\textit{(t)}} = (\textit{f}\textsuperscript{\textit{(t)}}, \textit{b}\textsuperscript{\textit{(t)}}, \textit{m}\textsuperscript{\textit{(t)}}). The model parameters are \textit{$\theta$} = (\textit{$\mu$}, \textit{$\varphi$}, \textit{$\pi$}, \textit{$\alpha$}). Then the joint distribution of the visible and hidden RVs can be written as:
+\begin{equation}
+P(h,v) = P(\theta) \prod_{t=1}^TP\Big(h^{(t)}, v^{(t)}|\theta\Big) 
+\label{eq:eq5}
+\end{equation}
+where (t) represents the index of the training cases.
+
+Usually, it is very hard to find the posterior distribution P(\textit{h}\textbar\textit{v}) directly since the calculation for the partition function is intractable. Therefore, we often use approximate inference techniques instead. The basic idea of those techniques is that we are trying to use a simpler \textit{Q}-distribution Q(\textit{h}) approximate the true posterior distribution P(\textit{h}\textbar\textit{v}). The free energy is a measurement of similarity between the true posterior distribution and the \textit{Q}-distribution we have currently. The free energy can be defined as:
+\begin{equation} \label{eq:eq6}
+\begin{split}
+F(Q,P) &= KL(Q,P) - \ln P(v) \\
+& = \int_{h} Q(h)\ln \frac{Q(h)}{P(h|v)} - \int_{h} Q(h)\ln P(v) \\
+& = \int_{h} Q(h)\ln \frac{Q(h)}{P(h,v)} 
+\end{split}
+\end{equation}
+where KL(\textit{Q},\textit{P}) is the KL-divergent between the \textit{Q}-distribution and the posterior distribution P(\textit{h}\textbar\textit{v}). The term ln P(\textit{v}) is added to make the calculation tractable (since we do not have a tractable form of P(\textit{h}\textbar\textit{v})), but it does not have a direct impact final solution for the \textit{Q}-distribution (since P\textit{v} does not depend on the \textit{Q}-distribution). Since the KL divergence is a similarity measure of two distributions, minimizing the free energy F(\textit{Q},\textit{P})) makes the \textit{Q}-distribution more similar to the the posterior distribution P(\textit{h}\textbar\textit{v}). Therefore, the goal of the inference problem is to search through the space to find Q(\textit{h}) that resembles the true posterior distribution closely. 
+
+If we assume the training data is i.i.d, we can de-couple the free energy so that we have one term for each training case. In this case, we can substitute equation~\ref{eq:eq5} into equation~\ref{eq:eq6} and obtain:
+\begin{equation}
+F(Q,P) = \int_{h} Q(h)\ln Q(h) - \int_{\theta} Q(\theta)\ln P(\theta) - \sum_{t=1}^T \int_{h^{(t)}\theta}Q(h^{(t)},\theta)\ln P\Big(h^{(t)}, v^{(t)}|\theta\Big) 
+\label{eq:eq7}
+\end{equation}
+
+
+\subsection{Iterated Conditional Modes (ICM)}
+\label{icm}
+The ICM algorithm alternates between updating the hidden variables and the model parameters. In the ICM update procedure, we are only considering local information. We update one variable/parameter at a time by setting it to its Maximum a posterior (MAP) value while holding other variables/parameters constant. Since we are using the MAP estimation where there is a hard-assignment for each pixel (it either belongs to the foreground or the background class), the \textit{Q}-distribution is a product of delta functions:
+\begin{equation} \label{eq:eq8}
+\begin{split}
+Q = &\Bigg( \prod_{k}\delta(\pi_k-\hat{\pi}_k) \Bigg) \Bigg( \prod_{k,i}\delta(\mu_{ki}-\hat{\mu}_{ki}) \Bigg)\Bigg( \prod_{k,i}\delta(\varphi_{ki}-\hat{\varphi}_{ki}) \Bigg)\Bigg( \prod_{k,i}\delta(\alpha_{ki}-\hat{\alpha}_{ki}) \Bigg) \\
+&\Bigg( \prod_{t}\Big[b^{(t)} = \hat{b}^{(t)}\Big] \Bigg)\Bigg( \prod_{t}\Big[f^{(t)} = \hat{f}^{(t)}\Big] \Bigg)\Bigg( \prod_{t}\prod_{i}\Big[m_i^{(t)} = \hat{m}_i^{(t)}\Big] \Bigg)
+\end{split}
+\end{equation}
+Substituting equation~\ref{eq:eq8} and ~\ref{eq:eq4}into equation~\ref{eq:eq7}, taking the derivative with respect to each parameter/ variable and set to zero, we can find the update rule for the ICM model as follows (Repeat until convergence):
+
+\textbf{E-step (hidden variable update)}
+
+for t = 1, \ldots , T:
+\begin{align*} 
+&f \leftarrow \text{argmax}_{f}\Bigg(\pi_f \prod_{i=1}^K {(\alpha_{fi})}^{m_{i}} {(1-\alpha_{fi})}^{1-m_{i}}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})^{m_{i}}\Bigg)\\
+&\text{for i = 1, \ldots , K: } \\
+& \text{ }\text{ }\text{ }\text{ }\text{ }m_i \leftarrow \text{argmax}_{m_i}=\begin{cases}
+\alpha_{fi}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi}), & \text{if $m_i = 1$}\\
+(1-\alpha_{fi})\mathcal{N}(z_i;\mu_{bi},\varphi_{bi}), & \text{if $m_i = 0$}
+\end{cases} \\
+&b \leftarrow \text{argmax}_{b}\Bigg(\pi_b \prod_{i=1}^K \mathcal{N}(z_i;\mu_{bi},\varphi_{bi})^{m_{i}}\Bigg)
+\end{align*} 
+
+\textbf{M-step (model parameter update)}
+
+For j = 1, \ldots , J: 
+\begin{equation*}
+\pi_j \leftarrow \frac{1}{2T}\sum_{t=1}^T([f^{(t)} = j] + [b^{(t)} = j])
+\end{equation*}
+For j = 1, \ldots , J and For i = 1, \ldots , K: 
+\begin{align*} 
+&\alpha_{ji} \leftarrow \frac{\sum_{t=1}^T [f^{(t)} = j]m_i^{(t)}}{\sum_{t=1}^T [f^{(t)} = j]} \\
+&\mu_{ji} \leftarrow \frac{\sum_{t=1}^T [f^{(t)} = j \text{ or } b^{(t)} = j ]z_i^{(t)}}{\sum_{t=1}^T [f^{(t)} = j \text{ or } b^{(t)} = j]} \\
+&\varphi_{ji} \leftarrow \frac{\sum_{t=1}^T [f^{(t)} = j \text{ or } b^{(t)} = j ](z_i^{(t)}-\mu_{ji})^2}{\sum_{t=1}^T [f^{(t)} = j \text{ or } b^{(t)} = j]} 
+\end{align*} 
+
+The ICM algorithm is really easy to implement, but it can get stuck at local optima very easily. Thus, this algorithm does not work well in many cases in practice.
+
+\subsection{Exact Expectation-Maximization (EM)}
+\label{exact_em}
+
+Unlike ICM, the EM algorithm takes into account for uncertainty in the RVs in the update process. The \textit{Q}-distribution for the i.i.d training cases can be written as:
+\begin{equation}
+Q(h) = \delta(\theta-\hat{\theta})\prod_{t=1}^TQ(h^{(t)})
+\label{eq:eq9}
+\end{equation}
+
+Again, substituting equation equation~\ref{eq:eq9} into equation~\ref{eq:eq7}, taking the derivative with respect to each parameter/ variable and set to zero, we can find the update rule for the ICM model as follows (Repeat until convergence):
+
+\textbf{E-step}
+
+for t = 1, \ldots , T:
+\begin{align*} 
+&Q(b,f) \leftarrow c_2\pi_b\pi_f\prod_{i=1}^K\Bigg(\alpha_{fi}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})+ (1-\alpha_{fi})\mathcal{N}(z_i;\mu_{bi},\varphi_{bi}) \Bigg) \\
+&Q(b) \leftarrow \sum_{f} Q(b,f) \\
+&Q(f) \leftarrow \sum_{b} Q(b,f) \\
+&\text{for i = 1, \ldots , K: } \\
+&\text{ }\text{ }\text{ }\text{ }\text{ }Q(m_i = 1|b,f) \leftarrow c_1\alpha_{fi}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})\\
+&\text{ }\text{ }\text{ }\text{ }\text{ }Q(m_i = 0|b,f) \leftarrow c_1\alpha_{fi}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})\\
+&\text{for i = 1, \ldots , K: } \\
+&\text{ }\text{ }\text{ }\text{ }\text{ }Q(m_i,b) \leftarrow \sum_{f}Q(m_i|b,f) Q(b,f)\\
+&\text{ }\text{ }\text{ }\text{ }\text{ }Q(m_i,f) \leftarrow \sum_{b}Q(m_i|b,f) Q(b,f)\\
+\end{align*} 
+
+\textbf{M-step (model parameter update)}
+For j = 1, \ldots , J: 
+\begin{equation*}
+\pi_j \leftarrow \frac{1}{2T}\sum_{t=1}^T\Bigg(Q(f^{(t)} = j) + Q(b^{(t)} = j)\Bigg)
+\end{equation*}
+For j = 1, \ldots , J and For i = 1, \ldots , K: 
+\begin{align*} 
+&\alpha_{ji} \leftarrow \frac{\sum_{t=1}^T Q(m_i^{(t)}=1,f^{(t)} = j)}{\sum_{t=1}^TQ(f^{(t)} = j)} \\
+&\mu_{ji} \leftarrow \frac{\sum_{t=1}^T\Big(Q(m_i^{(t)}=1,f^{(t)} = j) + Q(m_i^{(t)}=0,b^{(t)} = j)\Big)z_i^{(t)}}{\sum_{t=1}^T \Big(Q(m_i^{(t)}=1,f^{(t)} = j) + Q(m_i^{(t)}=0,b^{(t)} = j)\Big)} \\
+&\varphi_{ji} \leftarrow \frac{\sum_{t=1}^T\Big(Q(m_i^{(t)}=1,f^{(t)} = j) + Q(m_i^{(t)}=0,b^{(t)} = j)\Big)(z_i^{(t)}-\mu_{ji})^2}{\sum_{t=1}^T \Big(Q(m_i^{(t)}=1,f^{(t)} = j) + Q(m_i^{(t)}=0,b^{(t)} = j)\Big)} \\
+\end{align*} 
+
+\subsection{Gibbs Sampling EM}
+\label{gibbs_em}
+Gibbs sampling EM is very similar to ICM except it uses Gibbs sampling to update the hidden variables in the E-step. Since this sampling approach is a stochastic process, it helps the algorithm to jump out from local optima and thus improving the overall performance of the algorithm. The M-step in this case is the same as ICM, but the E-step is modified to:
+
+\textbf{E-step}
+
+for t = 1, \ldots , T:
+\begin{align*} 
+&f \leftarrow \text{sample}_{f}\Bigg(\pi_f \prod_{i=1}^K {(\alpha_{fi})}^{m_{i}} {(1-\alpha_{fi})}^{1-m_{i}}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})^{m_{i}}\Bigg)\\
+&\text{for i = 1, \ldots , K: } \\
+& \text{ }\text{ }\text{ }\text{ }\text{ }m_i \leftarrow \text{sample}_{m_i}=\begin{cases}
+\alpha_{fi}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi}), & \text{if $m_i = 1$}\\
+(1-\alpha_{fi})\mathcal{N}(z_i;\mu_{bi},\varphi_{bi}), & \text{if $m_i = 0$}
+\end{cases} \\
+&b \leftarrow \text{sample}_{b}\Bigg(\pi_b \prod_{i=1}^K \mathcal{N}(z_i;\mu_{bi},\varphi_{bi})^{m_{i}}\Bigg)
+\end{align*} 
+
+\subsection{Variational (Mean field) EM}
+\label{gibbs_em}
+
+In the variational EM case, we assume the hidden variables in the \textit{Q}-distribution factorizes completely:
+
+\begin{equation}
+Q(h) = \prod_{i=1}^LQ(h_i) 
+\label{eq:eq10}
+\end{equation}
+
+In this case, the M-step is exactly the same as the exact EM algorithm, but the E-step can be simplified to:
+
+\textbf{E-step}
+
+for t = 1, \ldots , T:
+\begin{align*} 
+&Q(f) \leftarrow c_3\pi_f\prod_{i=1}^K\Bigg(\Big(\alpha_{fi}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})\Big)^{Q(m_i=1)} (1-\alpha_{fi})^{Q(m_i=0)} \Bigg) \\
+&\text{for i = 1, \ldots , K: } \\
+&\text{ }\text{ }\text{ }\text{ }\text{ }Q(m_i = 1) \leftarrow c_1\prod_{f}\Bigg(\alpha_{fi}\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})\Bigg)^{Q(f)}\\
+&\text{ }\text{ }\text{ }\text{ }\text{ }Q(m_i = 1) \leftarrow c_1\Bigg(\prod_{f}(1-\alpha_{fi})^{Q(f)}\Bigg)\Bigg(\prod_{b}\mathcal{N}(z_i;\mu_{bi},\varphi_{bi})^{Q(b)}\Bigg)\\
+&Q(b) \leftarrow c_2\pi_b\prod_{i=1}^K\mathcal{N}(z_i;\mu_{fi},\varphi_{fi})^{Q(m_i=0)}
+\end{align*} 
+
+\section{References}
+\small{
+[1] Bishop, C.M., ``Graphical Models," in \textit{Pattern recognition and machine learning,} New York, NY, USA: Springer Science+Business Media, LLC, 2006, ch. 8, pp. 359-360.
+
+[2] Frey, B.J. and Jojic, N., ``A comparison of algorithms for inference and learning in probabilistic graphical models," \textit{IEEE Trans. Pattern Anal. Mach. Intell.,} vol. 27, no. 9, pp. 1392–1416, Sept. 2005.
+
+[3] Besag, J.E. ``Discussion of paper by P. Swiller," \textit{Bull. Inr. Stafisr. Inst.,} vol. 50, no. 3, pp. 422-425, 1983.
+
+[4] Loog, M. and van Ginneken, B., ``Supervised segmentation by iterated contextual pixel classification,” \textit{Image Signal Process., ser. Proc. 16th Int. Conf. Pattern Recognition (ICPR 2002),} pp. 925–928, 2002.
+
+[5] Owen, A., ``Image segmentation via iterated conditional expectations," Department of Statistics, Stanford University, Stanford, CA, Tech. Rep. 18 (94305-4065), June, 1989.
+
+[6] Chen, C.W.; Luo, J.B. and Parker, K.J., ``Image segmentation via adaptive K-mean clustering and knowledge-based morphological operations with biomedical applications,” \textit{IEEE Trans. Imag. Processing,} vol. 7, pp. 1673–1683, Dec. 1998.
+
+[7] Gu, D.B.and Sun, J.X., ``EM image segmentation algorithm based on an inhomogeneous hidden MRF model,” \textit{IEEE Proc. Vision, Image and Signal Processing,} vol. 152, Issue 2, pp. 184 – 190, April 2005.
+
+[8] Geman, S. and Geman, D., ``Stochastic Relaxation, Gibbs Distribution and the Bayesian Restoration of Images,” \textit{IEEE Trans. Pattern Anal. Mach. Intell.,} vol. 6, pp. 721-741, 1984.
+
+[9] Zhou, Y.; Gong, Y. and Tao, H. ``Background segmentation using spatial-temporal multi-resolution MRF,” \textit{Proc. 7th IEEE Workshop (WACV/MOTIONS '05),} vol. 1, pp. 8–13, Jan. 2005.
+
+[10] Cho, W.-H.; Kim, S.-H.; Park, S.-Y. and Park, J.-H., ``Mean field annealing EM for image segmentation," \textit{Proc. 2000 Int’l Conf. on Image Processing,} vol. 3, pp. 568-571, Sep. 2000.
+
+}
+
+\end{document}
+
