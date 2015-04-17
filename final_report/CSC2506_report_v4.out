@@ -1,0 +1,17 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{Algorithms}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Data generation}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{Model}{section.2}% 4
+\BOOKMARK [2][-]{subsection.2.3}{Finding model parameters by minimizing the free energy}{section.2}% 5
+\BOOKMARK [2][-]{subsection.2.4}{Iterated Conditional Modes \(ICM\)}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.5}{Exact Expectation-Maximization \(EM\)}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.6}{Gibbs Sampling EM}{section.2}% 8
+\BOOKMARK [2][-]{subsection.2.7}{Variational \(Mean field\) EM}{section.2}% 9
+\BOOKMARK [2][-]{subsection.2.8}{Other Inference Algorithms}{section.2}% 10
+\BOOKMARK [1][-]{section.3}{Experimental Results}{}% 11
+\BOOKMARK [2][-]{subsection.3.1}{Data set}{section.3}% 12
+\BOOKMARK [2][-]{subsection.3.2}{Parameter Learning Results}{section.3}% 13
+\BOOKMARK [2][-]{subsection.3.3}{Free Energy Results}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.4}{Runtime Analysis}{section.3}% 15
+\BOOKMARK [1][-]{section.4}{Conclusions}{}% 16
+\BOOKMARK [1][-]{section.5}{References}{}% 17
